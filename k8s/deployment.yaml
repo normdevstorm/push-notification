@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: push-notification-deployment
+  labels:
+    app: push-notification
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: push-notification
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: push-notification
+        version: v1
+    spec:
+      serviceAccountName: push-notification-service-account
+      containers:
+        - name: push-notification
+          image: docker.io/duynguyen03/push-notification:v2.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              valueFrom:
+                secretKeyRef:
+                  name: push-notification-secrets
+                  key: PORT
+            - name: NOTIFICATION_HUB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: push-notification-secrets
+                  key: NOTIFICATION_HUB_NAME
+            - name: NOTIFICATION_HUB_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: push-notification-secrets
+                  key: NOTIFICATION_HUB_CONNECTION_STRING
+            - name: FIREBASE_CONFIG_FILE
+              valueFrom:
+                secretKeyRef:
+                  name: push-notification-secrets
+                  key: FIREBASE_CONFIG_FILE
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: push-notification-secrets
+                  key: DB_URL
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: push-notification-secrets
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: push-notification-secrets
+                  key: DB_PASSWORD

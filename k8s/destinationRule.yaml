@@ -1,0 +1,10 @@
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: push-notification-service
+spec:
+  host: push-notification-service
+  subsets:
+    - name: v1
+      labels:
+        version: v1

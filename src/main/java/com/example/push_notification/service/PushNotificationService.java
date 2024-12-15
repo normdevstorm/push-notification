@@ -1,28 +1,38 @@
 package com.example.push_notification.service;
 
 import com.example.push_notification.entity.NotificationRequest;
+import com.example.push_notification.entity.ScheduledNotification;
+import com.example.push_notification.entity.User;
+import com.example.push_notification.repository.ScheduledNotificationRepository;
 import com.google.firebase.messaging.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.windowsazure.messaging.FcmV1Notification;
 import com.windowsazure.messaging.NotificationHub;
 import com.windowsazure.messaging.NotificationHubsException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class PushNotificationService {
     @Value("${azure.notification.hub.name}")
     private String hubName;
 
     @Value("${azure.notification.hub.connectionString}")
     private String connectionString;
+    private final UserService userService;
+    private final ScheduledNotificationRepository scheduledNotificationRepository;
 
     public String sendPushNotificationWithAzure(NotificationRequest request) throws NotificationHubsException, IOException {
         NotificationHub hub = new NotificationHub(connectionString, hubName);
@@ -36,7 +46,7 @@ public class PushNotificationService {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         String jsonOutput = gson.toJson(message);
         String response = sendAndGetResponse(message);
-        log.info("Sent message to token. Device token: " + request.getToken() + ", " + response+ " msg "+jsonOutput);
+//        log.info("Sent message to token. Device token: " + request.getToken());
         return response;
     }
 
@@ -71,4 +81,34 @@ public class PushNotificationService {
         return Message.builder()
                 .setApnsConfig(apnsConfig).setAndroidConfig(androidConfig).setNotification(notification);
     }
+
+    @Transactional
+    public String notifyAll(NotificationRequest request){
+        try{
+            List<User> users = userService.getUsers();
+            for(User user: users){
+                request.setToken(user.getToken());
+                sendPushNotificationFirebase(request);
+           }
+            return "Notification sent to all users";
+        } catch (Exception e){
+            log.error("Error while sending notification to all users", e);
+            return "Error while sending notification to all users";
+        }
+    }
+
+    public String scheduleNotification(NotificationRequest request, LocalDateTime sendTime) {
+        ScheduledNotification notification = ScheduledNotification.builder()
+                .title(request.getTitle())
+                .body(request.getBody())
+                .data(request.getData() != null ? request.getData().toString() : null)
+                .token(request.getToken())
+                .sendTime(sendTime)
+                .build();
+
+        scheduledNotificationRepository.save(notification);
+        return "Notification scheduled successfully for " + sendTime;
+    }
+
+
 }

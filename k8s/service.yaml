@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: push-notification-service
+  labels:
+    app: push-notification-service
+    service: push-notification-service
+spec:
+  ports:
+    - port: 9080
+      targetPort: 8080
+      name: http
+  selector:
+    app: push-notification
+    version: v1

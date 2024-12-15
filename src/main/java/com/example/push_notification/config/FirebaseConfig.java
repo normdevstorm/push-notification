@@ -22,6 +22,7 @@ public class FirebaseConfig {
     @PostConstruct
     public void firebaseInit() throws IOException {
         try {
+            @SuppressWarnings("deprecation")
             FirebaseOptions options = new FirebaseOptions
                     .Builder()
                     .setCredentials(GoogleCredentials.fromStream(new ClassPathResource(firebaseConfigPath).getInputStream()))

@@ -34,4 +34,10 @@ build/
 ### ENV ###
 .env
 ### FIREBASE CONFIG FILE ###
-firebase.json
+src/main/resources/firebase.json
+
+### exclude k8s secrets ###
+k8s/secrets.yaml
+
+### test ###
+test.http
