@@ -38,3 +38,6 @@ firebase.json
 
 ### ENV #########
 .env
+/k8s
+k8s
+test.http
