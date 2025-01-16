@@ -14,6 +14,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -25,8 +27,8 @@ public class FirebaseConfig {
     @Value("${app.firebase-configuration-file}")
     private String firebaseConfigPath;
     private final PushNotificationService pushNotificationService;
-    //TODO: set hard value for now
-    private String token= "c3j_uTtvRPSxik9VAHpjXH:APA91bG-5jNwLM7ggs3h73j8l1Qr3y5Cs-8oZdRF-ersHzVuncA-eB4sv22qWKtfpDAAn23geClDbRVPpppyAQ-laZorywRavku6448IXhGIjLVcc28UmrY";
+    @Value("${app.firebase-token}")
+    private String token;
     private boolean isFirebaseActive;
     private boolean isAlertSendingActive;
     private byte previousAlertLevel;
@@ -58,8 +60,11 @@ public class FirebaseConfig {
      */
     private void startListeningForData() {
         DatabaseReference ref;
+        DatabaseReference bellRef;
+
         try {
             ref = FirebaseDatabase.getInstance().getReference("/alerts");
+            bellRef = FirebaseDatabase.getInstance().getReference("/iot/bell");
         } catch (Exception e) {
             logger.error("Error creating DatabaseReference: {}", e.getMessage(), e);
             return;
@@ -86,6 +91,30 @@ public class FirebaseConfig {
                             currentAlertLevel = 0;
                             logger.info("No alert detected");
                         }
+                        previousAlertLevel = currentAlertLevel;
+
+                    } catch (Exception e) {
+                        logger.error("Error processing data snapshot: {}", e.getMessage(), e);
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                logger.error("Listener was cancelled: {}", databaseError.getMessage());
+            }
+        });
+
+        bellRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    try {
+                        boolean bellDetected = Boolean.TRUE.equals(dataSnapshot.getValue(Boolean.class));
+                        if (bellDetected) {
+                            pushNotificationService.sendPushNotificationFirebase(NotificationRequest.builder().title("Bell Notification").body("Someone is at the door at " + LocalDateTime.now().plusHours(7).format(DateTimeFormatter.ofPattern("HH:mm:ss"))).token(token).build());
+                            logger.info("Bell detected");
+                        }
                     } catch (Exception e) {
                         logger.error("Error processing data snapshot: {}", e.getMessage(), e);
                     }
@@ -98,7 +127,6 @@ public class FirebaseConfig {
             }
         });
     }
-
     /**
      * Thread to handle sending alerts.
      */
@@ -120,7 +148,6 @@ public class FirebaseConfig {
                     isAlertSendingActive = false;
                     previousAlertLevel = currentAlertLevel;
                 }
-                logger.info("Sending alert...");
                 // Here you would include logic for sending alerts, e.g., to a notification service.
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -131,4 +158,6 @@ public class FirebaseConfig {
             }
         }
     }
+
+    
 }
