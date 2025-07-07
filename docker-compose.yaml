@@ -4,7 +4,6 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: push-notification
-    image: duynguyen03/push-notification:v1
     ports:
       - "8080:8080"
     environment:
@@ -12,3 +11,12 @@ services:
       - NOTIFICATION_HUB_NAME=heatlh_management_message_hub
       - NOTIFICATION_HUB_CONNECTION_STRING=Endpoint=sb://test-cloud-message-health-management.servicebus.windows.net/;SharedAccessKeyName=DefaultFullSharedAccessSignature;SharedAccessKey=Gen/f7OU35JcwGm2VGvYQk/ohca5OGegj2L6dbgUm1g=
       - FIREBASE_CONFIG_FILE=firebase.json
+    env_file:
+      - .env
+    networks:
+      - health-management_health-management-network
+
+networks:
+    health-management_health-management-network:
+        driver: bridge
+        external: true

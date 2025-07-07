@@ -20,7 +20,7 @@ spec:
       serviceAccountName: push-notification-service-account
       containers:
         - name: push-notification
-          image: docker.io/duynguyen03/push-notification:v2.3
+          image: docker.io/duynguyen03/notification:v1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

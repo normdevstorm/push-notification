@@ -37,7 +37,7 @@ build/
 src/main/resources/firebase.json
 
 ### exclude k8s secrets ###
-k8s/secrets.yaml
+k8s/secrets.yml
 
 ### test ###
 test.http
